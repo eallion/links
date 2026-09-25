@@ -1,0 +1,14 @@
+{
+  "name": "edgeone-links-manager",
+  "version": "1.0.0",
+  "description": "Friend links and blog alliances management project based on EdgeOne Makers (KV + Blob)",
+  "type": "module",
+  "scripts": {
+    "dev": "edgeone makers dev -n links-manager",
+    "deploy": "edgeone makers deploy"
+  },
+  "dependencies": {
+    "@edgeone/pages-blob": "^0.0.14"
+  },
+  "packageManager": "pnpm@9.15.4"
+}
