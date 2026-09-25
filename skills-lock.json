@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "edgeone-makers-tools": {
+      "source": "TencentEdgeOne/edgeone-makers-tools",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "ea8a83185f86b79daa9fe9e90e00ad0e51b85533e6a43cb7a974cef504b1eb29"
+    }
+  }
+}
