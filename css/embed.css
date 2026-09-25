@@ -1,0 +1,612 @@
+/* ==========================================================================
+   EdgeOne Links - Embed Stylesheet (100% 复刻 index.html & style.css 视觉体系)
+   用于在外部博客通过 <div id="links"></div> 挂载，完全组件化与样式隔离
+   ========================================================================== */
+
+#links,
+.links-page-wrapper {
+  --bg-primary: #0a0d14;
+  --bg-secondary: #121722;
+  --bg-card: rgba(22, 28, 42, 0.75);
+  --bg-card-hover: rgba(30, 38, 56, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(79, 134, 247, 0.3);
+  --text-primary: #f0f4fc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-primary: #3b82f6;
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --accent-glow: rgba(59, 130, 246, 0.25);
+  --badge-bg: rgba(59, 130, 246, 0.12);
+  --badge-text: #60a5fa;
+  --tag-bg: rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 1.5rem 0 3.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* 博客主题适配：浅色模式 */
+[data-theme="light"] #links,
+[data-theme="light"] .links-page-wrapper,
+html.light #links,
+html.light .links-page-wrapper,
+html:not(.dark):not([data-theme="dark"]) #links,
+html:not(.dark):not([data-theme="dark"]) .links-page-wrapper {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-highlight: rgba(59, 130, 246, 0.35);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-primary: #2563eb;
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --accent-glow: rgba(37, 99, 235, 0.18);
+  --badge-bg: rgba(37, 99, 235, 0.08);
+  --badge-text: #2563eb;
+  --tag-bg: rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* 博客主题适配：深色模式强制覆盖 */
+[data-theme="dark"] #links,
+[data-theme="dark"] .links-page-wrapper,
+html.dark #links,
+html.dark .links-page-wrapper {
+  --bg-primary: #0a0d14;
+  --bg-secondary: #121722;
+  --bg-card: rgba(22, 28, 42, 0.75);
+  --bg-card-hover: rgba(30, 38, 56, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(79, 134, 247, 0.3);
+  --text-primary: #f0f4fc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-primary: #3b82f6;
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --accent-glow: rgba(59, 130, 246, 0.25);
+  --badge-bg: rgba(59, 130, 246, 0.12);
+  --badge-text: #60a5fa;
+  --tag-bg: rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* 消除宿主博客 prose / 全局样式的干扰 */
+#links *,
+.links-page-wrapper * {
+  box-sizing: border-box;
+}
+
+#links a,
+.links-page-wrapper a {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+#links a:hover,
+.links-page-wrapper a:hover {
+  text-decoration: none !important;
+}
+
+#links img,
+.links-page-wrapper img {
+  border-style: none;
+  max-width: 100%;
+  margin: 0 !important;
+}
+
+#links .content-section,
+.links-page-wrapper .content-section {
+  position: relative;
+  z-index: 1;
+}
+
+#links .section-head,
+.links-page-wrapper .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  margin-top: 3.5rem;
+}
+
+#links .section-title,
+.links-page-wrapper .section-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-primary);
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  line-height: 1.2;
+}
+
+#links .section-count,
+.links-page-wrapper .section-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--badge-text);
+  background: var(--badge-bg);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+/* 博客联盟徽章 */
+#links .unions-badges,
+.links-page-wrapper .unions-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#links .union-badge,
+.links-page-wrapper .union-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+#links .union-badge:hover,
+.links-page-wrapper .union-badge:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: var(--border-highlight);
+  background: var(--bg-card-hover);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+#links .union-badge-img,
+.links-page-wrapper .union-badge-img {
+  height: 24px;
+  max-height: 24px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* 联盟图标昼夜切换 */
+html.dark #links .union-badge-light,
+html.dark .links-page-wrapper .union-badge-light,
+html[data-theme="dark"] #links .union-badge-light,
+html[data-theme="dark"] .links-page-wrapper .union-badge-light {
+  display: none !important;
+}
+html.dark #links .union-badge-dark,
+html.dark .links-page-wrapper .union-badge-dark,
+html[data-theme="dark"] #links .union-badge-dark,
+html[data-theme="dark"] .links-page-wrapper .union-badge-dark {
+  display: block !important;
+}
+
+html:not(.dark):not([data-theme="dark"]) #links .union-badge-dark,
+html:not(.dark):not([data-theme="dark"]) .links-page-wrapper .union-badge-dark {
+  display: none !important;
+}
+html:not(.dark):not([data-theme="dark"]) #links .union-badge-light,
+html:not(.dark):not([data-theme="dark"]) .links-page-wrapper .union-badge-light {
+  display: block !important;
+}
+
+#links .union-badge-mini-icon,
+.links-page-wrapper .union-badge-mini-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+  margin-right: 0.45rem;
+}
+
+#links .union-badge-text,
+.links-page-wrapper .union-badge-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 风格切换器 (简约 | 详情 | 应用) */
+#links .style-switcher,
+.links-page-wrapper .style-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  gap: 2px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#links .style-btn,
+.links-page-wrapper .style-btn {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+  line-height: 1.2;
+}
+
+#links .style-btn:hover,
+.links-page-wrapper .style-btn:hover {
+  color: var(--text-primary);
+}
+
+#links .style-btn.active,
+.links-page-wrapper .style-btn.active {
+  background: var(--accent-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* 空状态与加载状态 */
+#links .empty-box,
+.links-page-wrapper .empty-box {
+  text-align: center;
+  padding: 3.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  grid-column: 1 / -1;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  width: 100%;
+}
+
+/* 基础卡片样式 */
+#links .link-card,
+.links-page-wrapper .link-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.35rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+  box-sizing: border-box;
+}
+
+#links .link-card:hover,
+.links-page-wrapper .link-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-highlight);
+  box-shadow: var(--shadow-lg);
+  background: var(--bg-card-hover);
+}
+
+#links .card-top,
+.links-page-wrapper .card-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+#links .link-avatar-wrap,
+.links-page-wrapper .link-avatar-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  padding: 2px;
+  background: var(--accent-gradient);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#links .link-avatar,
+.links-page-wrapper .link-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  background: var(--bg-secondary);
+  display: block;
+}
+
+#links .link-favicon-mini,
+.links-page-wrapper .link-favicon-mini {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1.5px solid var(--bg-card);
+  box-shadow: var(--shadow-xs);
+  object-fit: contain;
+}
+
+#links .link-title-group,
+.links-page-wrapper .link-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+#links .link-title,
+.links-page-wrapper .link-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  margin: 0 !important;
+}
+
+#links .link-title-favicon,
+.links-page-wrapper .link-title-favicon {
+  display: none;
+}
+
+#links .link-meta,
+.links-page-wrapper .link-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+}
+
+#links .link-author,
+.links-page-wrapper .link-author {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+}
+
+#links .link-url-text,
+.links-page-wrapper .link-url-text {
+  font-size: 0.78rem;
+  color: var(--accent-primary);
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0.85;
+}
+
+#links .link-desc,
+.links-page-wrapper .link-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+  margin: 0 !important;
+}
+
+/* 风格 1：详情风格 (Detailed - 默认) */
+#links .links-grid.style-detailed,
+#links .links-grid:not(.style-simple):not(.style-app),
+.links-page-wrapper .links-grid.style-detailed,
+.links-page-wrapper .links-grid:not(.style-simple):not(.style-app) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+/* 风格 2：简约风格 (Simple) */
+#links .links-grid.style-simple,
+.links-page-wrapper .links-grid.style-simple {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+#links .links-grid.style-simple .link-card,
+.links-page-wrapper .links-grid.style-simple .link-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  gap: 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+#links .links-grid.style-simple .link-card:hover,
+.links-page-wrapper .links-grid.style-simple .link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+#links .links-grid.style-simple .card-top,
+.links-page-wrapper .links-grid.style-simple .card-top {
+  margin-bottom: 0;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+#links .links-grid.style-simple .link-avatar-wrap,
+.links-page-wrapper .links-grid.style-simple .link-avatar-wrap {
+  width: 38px;
+  height: 38px;
+  background: none;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+#links .links-grid.style-simple .link-avatar,
+.links-page-wrapper .links-grid.style-simple .link-avatar {
+  border-radius: var(--radius-sm);
+}
+
+#links .links-grid.style-simple .link-title,
+.links-page-wrapper .links-grid.style-simple .link-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+#links .links-grid.style-simple .link-author,
+.links-page-wrapper .links-grid.style-simple .link-author {
+  display: none;
+}
+
+/* 简约风格不显示 link-desc */
+#links .links-grid.style-simple .link-desc,
+.links-page-wrapper .links-grid.style-simple .link-desc {
+  display: none !important;
+}
+
+/* 风格 3：应用风格 (App) */
+#links .links-grid.style-app,
+.links-page-wrapper .links-grid.style-app {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+}
+
+#links .links-grid.style-app .link-card,
+.links-page-wrapper .links-grid.style-app .link-card {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.35rem 0.85rem 1.1rem;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg);
+  min-height: auto;
+}
+
+#links .links-grid.style-app .card-top,
+.links-page-wrapper .links-grid.style-app .card-top {
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+#links .links-grid.style-app .link-avatar-wrap,
+.links-page-wrapper .links-grid.style-app .link-avatar-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  padding: 0;
+  background: transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#links .links-grid.style-app .link-card:hover .link-avatar-wrap,
+.links-page-wrapper .links-grid.style-app .link-card:hover .link-avatar-wrap {
+  transform: scale(1.08) translateY(-2px);
+}
+
+#links .links-grid.style-app .link-avatar,
+.links-page-wrapper .links-grid.style-app .link-avatar {
+  border-radius: 16px;
+}
+
+/* favicon 不显示在头像右下角 */
+#links .links-grid.style-app .link-favicon-mini,
+.links-page-wrapper .links-grid.style-app .link-favicon-mini {
+  display: none !important;
+}
+
+#links .links-grid.style-app .link-title-group,
+.links-page-wrapper .links-grid.style-app .link-title-group {
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}
+
+/* 第二行只显示 favicon 和网站名 */
+#links .links-grid.style-app .link-title,
+.links-page-wrapper .links-grid.style-app .link-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  width: 100%;
+  margin: 0 !important;
+}
+
+#links .links-grid.style-app .link-title-favicon,
+.links-page-wrapper .links-grid.style-app .link-title-favicon {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+#links .links-grid.style-app .link-title span,
+.links-page-wrapper .links-grid.style-app .link-title span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 应用风格其他内容全部隐藏 */
+#links .links-grid.style-app .link-meta,
+#links .links-grid.style-app .link-author,
+#links .links-grid.style-app .link-url-text,
+#links .links-grid.style-app .link-desc,
+.links-page-wrapper .links-grid.style-app .link-meta,
+.links-page-wrapper .links-grid.style-app .link-author,
+.links-page-wrapper .links-grid.style-app .link-url-text,
+.links-page-wrapper .links-grid.style-app .link-desc {
+  display: none !important;
+}

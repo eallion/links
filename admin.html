@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>链接管理控制台 - EdgeOne Makers</title>
+  <link rel="icon" id="admin-favicon-link" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <!-- Cloudflare Turnstile Script -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <div class="bg-ambient"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Theme Toggle for Auth Screen -->
+  <div id="auth-theme-toggle" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 10;">
+    <button class="btn-icon theme-toggle-btn" title="切换深色/浅色模式" aria-label="Toggle Theme">
+      <span class="theme-toggle-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </span>
+    </button>
+  </div>
+
+  <!-- Auth Screen (when not logged in) -->
+  <div id="auth-screen" style="display: none;">
+    <div class="auth-wrapper">
+      <div class="brand-icon" style="margin: 0 auto 1.25rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </div>
+      <h1 class="auth-title">管理控制台登录</h1>
+      <p class="auth-subtitle">基于 EdgeOne Makers (KV + Blob) 强一致存储</p>
+
+      <div id="admin-login-error" style="display: none; padding: 0.65rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; color: #ef4444; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); margin-bottom: 1.25rem; text-align: left;"></div>
+
+      <form id="login-form">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="admin-password">管理密钥 / 密码</label>
+          <input type="password" id="admin-password" class="form-input" placeholder="输入管理密码" required autofocus autocomplete="current-password">
+        </div>
+
+        <!-- Optional Cloudflare Turnstile Container -->
+        <div id="admin-turnstile-wrapper" class="form-group" style="display: none; justify-content: center; min-height: 65px; margin: 1.25rem 0;">
+          <div id="admin-turnstile-container"></div>
+        </div>
+        <input type="hidden" id="admin-cf-turnstile-token">
+
+        <button type="submit" id="admin-login-btn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;">登 录</button>
+      </form>
+      <div style="margin-top: 2rem;">
+        <a href="/" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">← 返回公开主页</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (when logged in) -->
+  <div id="admin-dashboard" style="display: none;">
+    <div class="admin-container">
+      <!-- Admin Top Bar -->
+      <header class="admin-header">
+        <div class="admin-title-group">
+          <h1>
+            <span class="brand-icon" style="width: 32px; height: 32px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </span>
+            <span>EdgeOne 友情链接管理后台</span>
+          </h1>
+        </div>
+        <nav class="admin-nav">
+          <button class="nav-tab active" data-tab="links">友情链接</button>
+          <button class="nav-tab" data-tab="unions">博客联盟</button>
+          <button class="nav-tab" data-tab="settings">系统设置</button>
+          <button class="nav-tab" data-tab="backup">数据备份</button>
+        </nav>
+        <div class="admin-actions">
+          <button class="btn-icon theme-toggle-btn" title="切换深色/浅色模式" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </span>
+          </button>
+          <a href="/" target="_blank" class="btn btn-secondary btn-sm">预览主页 ↗</a>
+          <button id="btn-logout" class="btn btn-danger btn-sm">退出登录</button>
+        </div>
+      </header>
+
+      <!-- Pane: 友情链接 -->
+      <section id="pane-links" class="tab-pane">
+        <div class="action-bar">
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 700;">友情链接列表</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">管理收录的独立博客与博友链接</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button id="btn-health-check-links" class="btn btn-secondary btn-sm" title="一键对所有友链执行 HTTP 连通性、SSL 证书与域名到期巡检">健康巡检</button>
+            <button id="btn-export-links" class="btn btn-secondary btn-sm" title="导出友情链接为 JSON">导出友链</button>
+            <label class="btn btn-secondary btn-sm" title="导入友情链接 JSON" style="cursor: pointer; margin-bottom: 0;">
+              <span>导入友链</span>
+              <input type="file" id="import-links-file" accept=".json" style="display: none;">
+            </label>
+            <button id="btn-template-links-top" class="btn btn-secondary btn-sm" title="下载友情链接导入格式模板 JSON">下载模板</button>
+            <button id="btn-batch-cache-links" class="btn btn-secondary btn-sm" title="一键批量抓取所有友链的 Google Favicon 并缓存至 EdgeOne Blob">批量缓存图标</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddLinkModal()">+ 添加友情链接</button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-order" style="width: 70px; min-width: 70px; white-space: nowrap; word-break: keep-all; text-align: center;">排序</th>
+                <th style="white-space: nowrap; word-break: keep-all;">网站与作者</th>
+                <th style="white-space: nowrap; word-break: keep-all;">网址 (URL)</th>
+                <th>说明简介</th>
+                <th style="width: 110px; min-width: 110px; white-space: nowrap; word-break: keep-all;">状态</th>
+                <th style="width: 130px; min-width: 130px; white-space: nowrap; word-break: keep-all;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="links-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Pane: 博客联盟 -->
+      <section id="pane-unions" class="tab-pane" style="display: none;">
+        <div class="action-bar">
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 700;">博客联盟与组织</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">管理博客圈、十年之约等组织加入信息</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button id="btn-export-unions" class="btn btn-secondary btn-sm" title="导出博客联盟为 JSON">导出联盟</button>
+            <label class="btn btn-secondary btn-sm" title="导入博客联盟 JSON" style="cursor: pointer; margin-bottom: 0;">
+              <span>导入联盟</span>
+              <input type="file" id="import-unions-file" accept=".json" style="display: none;">
+            </label>
+            <button id="btn-template-unions-top" class="btn btn-secondary btn-sm" title="下载博客联盟导入格式模板 JSON">下载模板</button>
+            <button id="btn-batch-cache-unions" class="btn btn-secondary btn-sm" title="一键批量抓取所有联盟官网的 Google Favicon 并缓存至 EdgeOne Blob">批量缓存图标</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddUnionModal()">+ 添加博客联盟</button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-order" style="width: 70px; min-width: 70px; white-space: nowrap; word-break: keep-all; text-align: center;">排序</th>
+                <th style="white-space: nowrap; word-break: keep-all;">联盟名称</th>
+                <th style="min-width: 180px; white-space: nowrap; word-break: keep-all;">联盟链接 (专属 / 官网)</th>
+                <th style="white-space: nowrap; word-break: keep-all;">超链接徽章图标</th>
+                <th>说明简介</th>
+                <th style="width: 140px; min-width: 140px; white-space: nowrap; word-break: keep-all;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="unions-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Pane: 系统设置 -->
+      <section id="pane-settings" class="tab-pane" style="display: none;">
+        <div style="max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+          <!-- Basic Info -->
+          <div class="table-card" style="padding: 2rem;">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem;">基本站点与验证配置</h2>
+            <form id="settings-form">
+              <div class="form-group">
+                <label class="form-label" for="setting-site-title">站点标题</label>
+                <input type="text" id="setting-site-title" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-site-desc">站点副标题 / 说明</label>
+                <input type="text" id="setting-site-desc" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-favicon">站点 Favicon 图标</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="text" id="setting-favicon" class="form-input" placeholder="输入 Favicon 图片 URL 或上传至 Blob">
+                  <label class="btn btn-secondary btn-sm" style="cursor: pointer; white-space: nowrap; flex-shrink: 0;">
+                    <span>上传图标</span>
+                    <input type="file" id="setting-favicon-file" accept="image/*,.ico" style="display: none;">
+                  </label>
+                </div>
+                <div class="preview-box" id="favicon-preview-box" style="margin-top: 0.5rem; display: none;">
+                  <img id="setting-favicon-preview" class="preview-img" style="width: 32px; height: 32px; border-radius: 4px;" src="" alt="Favicon">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">站点标签页图标预览</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-gravatar-mirror">Gravatar 镜像代理域名</label>
+                <input type="text" id="setting-gravatar-mirror" class="form-input" placeholder="例如：gravatar.bluecdn.com">
+                <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">
+                  默认使用 gravatar.bluecdn.com，只需填入域名（如 cravatar.cn、weavatar.com），系统会自动拼接 /avatar/{ID}。
+                </small>
+              </div>
+              
+              <!-- Turnstile Switch & Keys -->
+              <div class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--tag-bg); border: 1px solid var(--border-color); margin-top: 1.25rem;">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; margin-bottom: 0;">
+                  <input type="checkbox" id="setting-turnstile-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);">
+                  <span style="font-weight: 700; color: var(--text-primary);">启用 Cloudflare Turnstile 登录人机验证</span>
+                </label>
+                <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 6px;">
+                  开启后登录需完成 Turnstile 人机验证；关闭后仅需输入管理员密码即可登录。API 服务不受影响。
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-turnstile-sitekey">Cloudflare Turnstile Site Key (站点密钥)</label>
+                <input type="text" id="setting-turnstile-sitekey" class="form-input" placeholder="例如：0x4AAAAAA...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-turnstile-secretkey">Cloudflare Turnstile Secret Key (服务端密钥)</label>
+                <input type="password" id="setting-turnstile-secretkey" class="form-input" placeholder="输入 Secret Key，不修改请留空">
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">保存基本设置</button>
+            </form>
+          </div>
+
+          <!-- Password Change -->
+          <div class="table-card" style="padding: 2rem;">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem;">修改管理密码</h2>
+            <form id="password-form">
+              <div class="form-group">
+                <label class="form-label" for="setting-old-password">当前密码</label>
+                <input type="password" id="setting-old-password" class="form-input" placeholder="输入当前密码" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-new-password">新密码</label>
+                <input type="password" id="setting-new-password" class="form-input" placeholder="至少 6 位字符" required>
+              </div>
+              <button type="submit" class="btn btn-secondary" style="margin-top: 0.5rem;">更新管理员密码</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pane: 数据备份 -->
+      <section id="pane-backup" class="tab-pane" style="display: none;">
+        <div style="max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+          
+          <!-- 全量数据备份与还原 -->
+          <div class="table-card" style="padding: 1.75rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <h2 style="font-size: 1.15rem; font-weight: 700;">全量数据备份与还原</h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                包含站点基本配置、全体友情链接及博客联盟数据的完整备份快照。
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; align-items: center;">
+              <button id="btn-export-data" class="btn btn-primary btn-sm">导出全量数据 JSON</button>
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin-bottom: 0;">
+                <span>导入全量备份 JSON</span>
+                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+              </label>
+              <button id="btn-template-full" class="btn btn-secondary btn-sm" title="下载全量数据备份格式模板 JSON">下载全量模板</button>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.6rem;">
+              提示：可先点击「下载全量模板」按结构填写站点基本信息、友链与联盟数据后导入。
+            </small>
+          </div>
+
+          <!-- 友情链接单独备份与导入 -->
+          <div class="table-card" style="padding: 1.75rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <h2 style="font-size: 1.15rem; font-weight: 700;">友情链接单独导入与导出</h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                独立导出或导入友情链接列表。支持标准友链数组格式或全量备份 JSON（自动提取 links）。
+              </p>
+            </div>
+            <div style="background: var(--tag-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.85rem;">
+              <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">导入模式选项：</div>
+              <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-bottom: 0;">
+                  <input type="radio" name="import-links-mode" value="merge" checked style="accent-color: var(--accent-primary);">
+                  <span>增量合并与更新（推荐，已有链接根据网址更新，新链接追加）</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-bottom: 0;">
+                  <input type="radio" name="import-links-mode" value="replace" style="accent-color: var(--accent-primary);">
+                  <span>完全覆盖（清空当前所有友情链接并替换）</span>
+                </label>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <button id="btn-export-links-pane" class="btn btn-primary btn-sm">导出友情链接 JSON</button>
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin-bottom: 0;">
+                <span>导入友情链接 JSON</span>
+                <input type="file" id="import-links-file-pane" accept=".json" style="display: none;">
+              </label>
+              <button id="btn-template-links" class="btn btn-secondary btn-sm" title="下载标准友情链接导入格式模板 JSON">下载友链模板</button>
+              <button id="btn-batch-cache-links-pane" class="btn btn-secondary btn-sm" title="一键批量抓取所有友链的 Google Favicon 并缓存至 EdgeOne Blob">批量缓存图标</button>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.6rem;">
+              提示：可先点击「下载友链模板」填入待添加的友情链接后导入，或直接点击「批量缓存图标」将全部友链网站图标缓存至 Blob。
+            </small>
+          </div>
+
+          <!-- 博客联盟单独备份与导入 -->
+          <div class="table-card" style="padding: 1.75rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <h2 style="font-size: 1.15rem; font-weight: 700;">博客联盟单独导入与导出</h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                独立导出或导入博客联盟与组织加入信息。支持标准联盟数组格式或全量备份 JSON（自动提取 unions）。
+              </p>
+            </div>
+            <div style="background: var(--tag-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.85rem;">
+              <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">导入模式选项：</div>
+              <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-bottom: 0;">
+                  <input type="radio" name="import-unions-mode" value="merge" checked style="accent-color: var(--accent-primary);">
+                  <span>增量合并与更新（推荐，已有联盟根据网址更新，新联盟追加）</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-bottom: 0;">
+                  <input type="radio" name="import-unions-mode" value="replace" style="accent-color: var(--accent-primary);">
+                  <span>完全覆盖（清空当前所有博客联盟并替换）</span>
+                </label>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <button id="btn-export-unions-pane" class="btn btn-primary btn-sm">导出博客联盟 JSON</button>
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin-bottom: 0;">
+                <span>导入博客联盟 JSON</span>
+                <input type="file" id="import-unions-file-pane" accept=".json" style="display: none;">
+              </label>
+              <button id="btn-template-unions" class="btn btn-secondary btn-sm" title="下载标准博客联盟导入格式模板 JSON">下载联盟模板</button>
+              <button id="btn-batch-cache-unions-pane" class="btn btn-secondary btn-sm" title="一键批量抓取所有联盟官网的 Google Favicon 并缓存至 EdgeOne Blob">批量缓存图标</button>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.6rem;">
+              提示：可先点击「下载联盟模板」填入待添加的联盟组织后导入，或直接点击「批量缓存图标」将所有联盟官网图标缓存至 Blob。
+            </small>
+          </div>
+
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal: 友情链接 Edit/Add -->
+  <div id="link-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="link-modal-title" class="modal-title">添加友情链接</h2>
+        <button class="modal-close" onclick="closeModal('link-modal')">&times;</button>
+      </div>
+      <form id="link-form">
+        <input type="hidden" id="link-id">
+        <input type="hidden" id="link-avatar-url-val">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="link-title">网站标题 (Title) *</label>
+            <input type="text" id="link-title" class="form-input" placeholder="例如：大大的小蜗牛" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="link-author">站长 / 作者 (Author)</label>
+            <input type="text" id="link-author" class="form-input" placeholder="例如：eallion">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 0 0 130px;">
+            <label class="form-label" for="link-protocol">协议 (Protocol)</label>
+            <select id="link-protocol" class="form-select">
+              <option value="https://">https://</option>
+              <option value="http://">http://</option>
+              <option value="ipfs://">ipfs://</option>
+              <option value="custom">自定义协议</option>
+            </select>
+          </div>
+          <div class="form-group" id="group-protocol-custom" style="display: none; flex: 0 0 130px;">
+            <label class="form-label" for="link-protocol-custom">自定义协议</label>
+            <input type="text" id="link-protocol-custom" class="form-input" placeholder="例如：gemini://">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="link-url">网站地址 (URL) *</label>
+            <input type="text" id="link-url" class="form-input" placeholder="例如：eallion.com 或 https://eallion.com" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="link-desc">说明简介 (Description)</label>
+          <textarea id="link-desc" class="form-textarea" rows="2" placeholder="例如：Chance favors the prepared mind!"></textarea>
+        </div>
+
+        <!-- Item 1: 网站图标 / Favicon (独立的第 1 项) -->
+        <div class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 1rem;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem;">1. 网站图标 / Favicon</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="link-favicon-val" class="form-input" style="flex: 1; min-width: 200px;" placeholder="输入网站图标 URL 或从 Google 抓取">
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer; white-space: nowrap; flex-shrink: 0;">
+              <span>上传图标</span>
+              <input type="file" id="link-favicon-file" accept="image/*,.ico,.svg" style="display: none;">
+            </label>
+            <button type="button" id="btn-fetch-favicon" class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;">
+              抓取 Google Favicon 到 Blob
+            </button>
+          </div>
+          <div class="preview-box" id="link-favicon-preview-box" style="margin-top: 0.6rem; display: none;">
+            <img id="link-favicon-preview" class="preview-img" style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain;" src="" alt="网站图标">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">网站 Favicon 实时预览</span>
+          </div>
+        </div>
+
+        <!-- Item 2: 站长头像 / Avatar (独立的第 2 项) -->
+        <div class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 1rem;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem;">2. 站长头像 / Avatar</label>
+          <input type="hidden" id="link-avatar-type" value="gravatar">
+          <input type="hidden" id="link-avatar-val">
+
+          <div id="link-avatar-segmented" class="segmented-control" style="margin-bottom: 0.75rem;">
+            <button type="button" class="segmented-btn active" data-type="gravatar">Gravatar / QQ 头像</button>
+            <button type="button" class="segmented-btn" data-type="url">网络图片 URL</button>
+            <button type="button" class="segmented-btn" data-type="blob">上传头像到 Blob</button>
+          </div>
+
+          <!-- Gravatar / QQ / Hash Option -->
+          <div id="group-avatar-gravatar">
+            <div style="margin-bottom: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label class="form-label" for="link-avatar-email" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0;">头像标识 {ID}</label>
+                <span id="link-avatar-detected-badge" style="font-size: 0.72rem; color: var(--accent-primary); font-weight: 600;"></span>
+              </div>
+              <input type="text" id="link-avatar-email" class="form-input" placeholder="输入 邮箱（推荐）/ MD5哈希 / 5-12位QQ号">
+            </div>
+          </div>
+
+          <!-- URL Option -->
+          <div id="group-avatar-url" style="display: none;">
+            <input type="text" id="link-avatar-url-input" class="form-input" placeholder="输入站长头像图片 URL 地址">
+          </div>
+
+          <!-- Blob Upload Option -->
+          <div id="group-avatar-blob" style="display: none;">
+            <label class="btn btn-secondary btn-sm" id="link-avatar-file-label" style="cursor: pointer;">
+              <span>选择头像上传至 EdgeOne Blob</span>
+              <input type="file" id="link-avatar-file" accept="image/*" style="display: none;">
+            </label>
+          </div>
+
+          <!-- Live Avatar Preview -->
+          <div class="preview-box" id="link-avatar-preview-box" style="margin-top: 0.6rem;">
+            <img id="link-avatar-preview" class="preview-img" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" src="" alt="头像预览">
+            <div id="link-avatar-preview-hint" style="font-size: 0.8rem; color: var(--text-muted);">
+              站长头像实时预览（直接调用系统设置镜像或 QQ 640px 头像）
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="link-status">发布状态</label>
+            <select id="link-status" class="form-select">
+              <option value="active">正常展示 (Active)</option>
+              <option value="hidden">隐藏保留 (Hidden)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="link-order">排序权重 (数字越小越靠前)</label>
+            <input type="number" id="link-order" class="form-input" value="1">
+          </div>
+          <div class="form-group" style="flex: 0 0 120px;">
+            <label class="form-label" for="link-pinned">链接置顶</label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; height: 38px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="link-pinned" style="width: 18px; height: 18px; accent-color: var(--accent-primary); cursor: pointer;">
+              <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">置顶显示</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. 健康与监控状态 (在编辑时体现) -->
+        <div id="link-health-details-card" class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 1rem; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">健康监控详情</span>
+              <span id="link-health-check-time" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+            </div>
+            <button type="button" id="btn-recheck-modal-link" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.6rem;">重新体检</button>
+          </div>
+
+          <div id="link-health-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem;">
+            <!-- HTTP 连通性 -->
+            <div style="background: var(--bg-body); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">HTTP 连通性</div>
+              <div id="modal-health-http" style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">-</div>
+              <div id="modal-health-latency" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">-</div>
+            </div>
+
+            <!-- SSL 证书 -->
+            <div style="background: var(--bg-body); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">SSL 证书</div>
+              <div id="modal-health-ssl" style="font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 4px;">-</div>
+              <div id="modal-health-ssl-detail" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; word-break: break-all;">-</div>
+            </div>
+
+            <!-- 域名到期 -->
+            <div style="background: var(--bg-body); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">域名到期 (WHOIS)</div>
+              <div id="modal-health-domain" style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">-</div>
+              <div id="modal-health-domain-detail" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; word-break: break-all;">-</div>
+            </div>
+          </div>
+
+          <div id="link-health-empty-hint" style="display: none; font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 0.75rem;">
+            暂无该链接的健康监控记录，可点击上方「重新体检」进行即时检测。
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('link-modal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存链接</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: 博客联盟 Edit/Add -->
+  <div id="union-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="union-modal-title" class="modal-title">添加博客联盟</h2>
+        <button class="modal-close" onclick="closeModal('union-modal')">&times;</button>
+      </div>
+      <form id="union-form">
+        <input type="hidden" id="union-id">
+
+        <div class="form-group">
+          <label class="form-label" for="union-name">联盟 / 组织名称 *</label>
+          <input type="text" id="union-name" class="form-input" placeholder="例如：博友圈、十年之约" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="union-official-url">联盟官网链接 (官方主页)</label>
+          <input type="url" id="union-official-url" class="form-input" placeholder="例如：https://www.boyouquan.com 或 https://foreverblog.cn">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="union-url">专属展示链接 (自己的网站在联盟的专属页面) *</label>
+          <input type="url" id="union-url" class="form-input" placeholder="例如：https://www.boyouquan.com/blogs/www.eallion.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="union-desc">联盟简介</label>
+          <textarea id="union-desc" class="form-textarea" rows="2" placeholder="例如：中文独立博客导航与朋友圈"></textarea>
+        </div>
+
+        <!-- Union Website Icon (Google Favicon API or Blob) -->
+        <div class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 1rem;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem;">联盟网站图标 (Website Favicon)</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="union-website-icon" class="form-input" style="flex: 1; min-width: 200px;" placeholder="支持输入 URL 或从 Google Favicon 获取">
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer; white-space: nowrap; flex-shrink: 0;">
+              <span>上传图标</span>
+              <input type="file" id="union-website-icon-file" accept="image/*,.ico,.svg" style="display: none;">
+            </label>
+            <button type="button" id="btn-fetch-union-favicon" class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;">
+              抓取 Google Favicon 到 Blob
+            </button>
+          </div>
+          <div class="preview-box" id="union-website-icon-preview-box" style="margin-top: 0.6rem; display: none;">
+            <img id="union-website-icon-preview" class="preview-img" style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain;" src="" alt="网站图标">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">联盟网站 Favicon 图标预览</span>
+          </div>
+        </div>
+
+        <!-- Union Hyperlink Badge Icon (Light / Dark) -->
+        <div class="form-group" style="padding: 1rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 1rem;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem;">超链接展示图标 (用于前端联盟徽章展示，支持 Light / Dark)</label>
+          <input type="hidden" id="union-icon-type" value="url">
+          <div id="union-icon-segmented" class="segmented-control" style="margin-bottom: 0.75rem;">
+            <button type="button" class="segmented-btn active" data-type="url">网络图标 URL</button>
+            <button type="button" class="segmented-btn" data-type="blob">上传 Light / Dark 图标到 Blob</button>
+          </div>
+
+          <!-- URL Inputs -->
+          <div id="group-union-icon-url">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.78rem;">浅色模式徽章图标 URL (Light)</label>
+                <input type="text" id="union-icon-light" class="form-input" placeholder="https://...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.78rem;">深色模式徽章图标 URL (Dark，可选)</label>
+                <input type="text" id="union-icon-dark" class="form-input" placeholder="留空则沿用浅色图标">
+              </div>
+            </div>
+          </div>
+
+          <!-- Blob Upload Inputs -->
+          <div id="group-union-icon-blob" style="display: none;">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.78rem;">上传浅色徽章图标 (Light)</label>
+                <input type="file" id="union-icon-light-file" accept="image/*,.svg" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.78rem;">上传深色徽章图标 (Dark)</label>
+                <input type="file" id="union-icon-dark-file" accept="image/*,.svg" class="form-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Icon Preview -->
+          <div class="preview-box">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="text-align: center;">
+                <div style="height: 38px; min-width: 60px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+                  <img id="union-preview-light" style="max-height: 24px; max-width: 100px; object-fit: contain;" src="" alt="Light">
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">浅色徽章</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="height: 38px; min-width: 60px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px;">
+                  <img id="union-preview-dark" style="max-height: 24px; max-width: 100px; object-fit: contain;" src="" alt="Dark">
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">深色徽章</div>
+              </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">
+              前端联盟徽章将根据访问者主题模式自适应展示对应图标。
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="union-order">排序权重 (数字越小越靠前)</label>
+          <input type="number" id="union-order" class="form-input" value="1">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('union-modal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存联盟</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: 通用自定义确认对话框 (替代原生 confirm/alert) -->
+  <div id="confirm-modal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 440px; padding: 1.75rem;">
+      <div class="modal-header" style="margin-bottom: 0.85rem; align-items: center;">
+        <h3 id="confirm-modal-title" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">确认操作</h3>
+        <button type="button" class="modal-close" id="confirm-modal-close" aria-label="关闭">&times;</button>
+      </div>
+      <div id="confirm-modal-body" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem; word-break: break-word; white-space: pre-line;">
+        <!-- 动态确认信息 -->
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" id="confirm-modal-cancel" class="btn btn-secondary btn-sm" style="min-width: 72px;">取消</button>
+        <button type="button" id="confirm-modal-ok" class="btn btn-primary btn-sm" style="min-width: 72px;">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
